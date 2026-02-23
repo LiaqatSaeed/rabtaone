@@ -1,0 +1,62 @@
+import { prisma } from "@/infrastructure/db/prisma";
+import { OrderStatus } from "@prisma/client";
+
+export const orderRepo = {
+  create: (data: {
+    userId: string;
+    prescriptionUrl: string;
+    notes?: string;
+    shipName?: string;
+    shipPhone?: string;
+    shipAddress1?: string;
+    shipAddress2?: string;
+    shipCity?: string;
+    shipState?: string;
+    shipPostalCode?: string;
+    shipCountry?: string;
+    items?: { sku: string; name: string; quantity: number; unitPrice: number }[];
+  }) =>
+    prisma.order.create({
+      data: {
+        userId: data.userId,
+        prescriptionUrl: data.prescriptionUrl,
+        notes: data.notes,
+        shipName: data.shipName,
+        shipPhone: data.shipPhone,
+        shipAddress1: data.shipAddress1,
+        shipAddress2: data.shipAddress2,
+        shipCity: data.shipCity,
+        shipState: data.shipState,
+        shipPostalCode: data.shipPostalCode,
+        shipCountry: data.shipCountry,
+        items: data.items?.length
+          ? {
+              create: data.items.map((item) => ({
+                sku: item.sku,
+                name: item.name,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+              })),
+            }
+          : undefined,
+      },
+    }),
+
+  findById: (id: string) =>
+    prisma.order.findUnique({
+      where: { id },
+      include: { proposals: true, statusEvents: true, deliveryJob: true, items: true },
+    }),
+
+  listByUser: (userId: string) =>
+    prisma.order.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
+
+  updateStatus: (id: string, status: OrderStatus) =>
+    prisma.order.update({ where: { id }, data: { status } }),
+
+  updateMerchant: (id: string, merchantId: string) =>
+    prisma.order.update({ where: { id }, data: { merchantId } }),
+
+  addStatusEvent: (data: { orderId: string; from: OrderStatus; to: OrderStatus }) =>
+    prisma.orderStatusEvent.create({ data }),
+};

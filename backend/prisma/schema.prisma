@@ -1,0 +1,269 @@
+// Prisma schema for IdeaApp
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  MERCHANT
+  DELIVERY
+  ADMIN
+}
+
+enum OrderStatus {
+  REQUESTED
+  PROPOSED
+  ACCEPTED
+  SYNC_PENDING
+  SYNCED
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+}
+
+model Account {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userProfile     UserProfile?
+  merchantProfile MerchantProfile?
+  deliveryProfile DeliveryProfile?
+
+  sessions      Session[]
+  notifications Notification[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  accountId String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  account   Account  @relation(fields: [accountId], references: [id])
+}
+
+model UserProfile {
+  id         String   @id @default(cuid())
+  accountId  String   @unique
+  fullName   String
+  defaultLat Float?
+  defaultLng Float?
+  createdAt  DateTime @default(now())
+
+  account    Account @relation(fields: [accountId], references: [id])
+  orders     Order[]
+}
+
+model MerchantProfile {
+  id          String   @id @default(cuid())
+  accountId   String   @unique
+  name        String
+  industryType String
+  lat         Float
+  lng         Float
+  serviceKm   Int      @default(5)
+  hasDelivery Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  account     Account @relation(fields: [accountId], references: [id])
+  proposals   Proposal[]
+  orders      Order[]
+  syncRequests SyncRequest[]
+}
+
+model DeliveryProfile {
+  id         String   @id @default(cuid())
+  accountId  String   @unique
+  fullName   String
+  currentLat Float?
+  currentLng Float?
+  isOnline   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  account    Account @relation(fields: [accountId], references: [id])
+  bids       DeliveryBid[]
+  jobs       DeliveryJob[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  merchantId      String?
+  status          OrderStatus @default(REQUESTED)
+  prescriptionUrl String
+  notes           String?
+  shipName        String?
+  shipPhone       String?
+  shipAddress1    String?
+  shipAddress2    String?
+  shipCity        String?
+  shipState       String?
+  shipPostalCode  String?
+  shipCountry     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user         UserProfile        @relation(fields: [userId], references: [id])
+  merchant     MerchantProfile?   @relation(fields: [merchantId], references: [id])
+
+  items        OrderItem[]
+  proposals    Proposal[]
+  deliveryJob  DeliveryJob?
+  statusEvents OrderStatusEvent[]
+  syncEvents   SyncEvent[]
+  syncRequests SyncRequest[]
+  chats        ChatThread[]
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  sku       String
+  name      String
+  quantity  Int
+  unitPrice Float
+  createdAt DateTime @default(now())
+
+  order     Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+}
+
+model Proposal {
+  id             String   @id @default(cuid())
+  orderId        String
+  merchantId     String
+  priceCents     Int
+  availability   String
+  deliveryOption String
+  createdAt      DateTime @default(now())
+
+  order       Order           @relation(fields: [orderId], references: [id])
+  merchant    MerchantProfile @relation(fields: [merchantId], references: [id])
+}
+
+model DeliveryJob {
+  id           String   @id @default(cuid())
+  orderId      String   @unique
+  assignedToId String?
+  status       String   @default("OPEN")
+  pickupLat    Float
+  pickupLng    Float
+  dropoffLat   Float
+  dropoffLng   Float
+  createdAt    DateTime @default(now())
+
+  order      Order             @relation(fields: [orderId], references: [id])
+  assignedTo DeliveryProfile?  @relation(fields: [assignedToId], references: [id])
+  bids       DeliveryBid[]
+  locations  DeliveryLocation[]
+}
+
+model DeliveryBid {
+  id         String   @id @default(cuid())
+  jobId      String
+  courierId  String
+  priceCents Int
+  createdAt  DateTime @default(now())
+
+  job      DeliveryJob     @relation(fields: [jobId], references: [id])
+  courier  DeliveryProfile @relation(fields: [courierId], references: [id])
+}
+
+model DeliveryLocation {
+  id        String   @id @default(cuid())
+  jobId     String
+  lat       Float
+  lng       Float
+  createdAt DateTime @default(now())
+
+  job       DeliveryJob @relation(fields: [jobId], references: [id])
+}
+
+model ChatThread {
+  id        String   @id @default(cuid())
+  orderId   String
+  createdAt DateTime @default(now())
+
+  order     Order        @relation(fields: [orderId], references: [id])
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  threadId  String
+  senderId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  thread    ChatThread @relation(fields: [threadId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  accountId String
+  type      String
+  payload   Json
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  account   Account @relation(fields: [accountId], references: [id])
+}
+
+model OrderStatusEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  from      OrderStatus
+  to        OrderStatus
+  createdAt DateTime @default(now())
+
+  order     Order @relation(fields: [orderId], references: [id])
+}
+
+model SyncEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  status    String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  order     Order @relation(fields: [orderId], references: [id])
+}
+
+model SyncRequest {
+  id            String     @id @default(uuid())
+  orderId       String
+  merchantId    String
+  industryType  String
+  payload       Json
+  status        SyncStatus @default(PENDING)
+  invoiceNumber String?
+  totalAmount   Float?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  order    Order           @relation(fields: [orderId], references: [id])
+  merchant MerchantProfile @relation(fields: [merchantId], references: [id])
+
+  @@index([merchantId, status])
+  @@index([orderId])
+}

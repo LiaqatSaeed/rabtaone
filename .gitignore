@@ -1,0 +1,9 @@
+.env
+.env.*
+node_modules
+pnpm-debug.log
+npm-debug.log
+.DS_Store
+.next
+.dist
+coverage
