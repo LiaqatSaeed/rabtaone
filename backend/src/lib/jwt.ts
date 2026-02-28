@@ -3,7 +3,7 @@ import { env } from "@/config/env";
 
 export type JwtPayload = {
   sub: string;
-  role: string;
+  roles: string[];
 };
 
 export function signAccessToken(payload: JwtPayload) {
@@ -11,5 +11,9 @@ export function signAccessToken(payload: JwtPayload) {
 }
 
 export function verifyToken(token: string) {
-  return jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+  const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload & { role?: string };
+  if (!decoded.roles && decoded.role) {
+    decoded.roles = [decoded.role];
+  }
+  return decoded as JwtPayload;
 }

@@ -6,6 +6,8 @@ export const orderRepo = {
     userId: string;
     prescriptionUrl: string;
     notes?: string;
+    industryType?: string;
+    totalAmount?: number;
     shipName?: string;
     shipPhone?: string;
     shipAddress1?: string;
@@ -21,6 +23,8 @@ export const orderRepo = {
         userId: data.userId,
         prescriptionUrl: data.prescriptionUrl,
         notes: data.notes,
+        industryType: data.industryType,
+        totalAmount: data.totalAmount,
         shipName: data.shipName,
         shipPhone: data.shipPhone,
         shipAddress1: data.shipAddress1,
@@ -51,11 +55,22 @@ export const orderRepo = {
   listByUser: (userId: string) =>
     prisma.order.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
 
+  listByMerchant: (merchantId: string, limit?: number) =>
+    prisma.order.findMany({
+      where: { merchantId },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    }),
+
   updateStatus: (id: string, status: OrderStatus) =>
     prisma.order.update({ where: { id }, data: { status } }),
 
   updateMerchant: (id: string, merchantId: string) =>
     prisma.order.update({ where: { id }, data: { merchantId } }),
+
+  updateIndustryType: (id: string, industryType: string) =>
+    prisma.order.update({ where: { id }, data: { industryType } }),
 
   addStatusEvent: (data: { orderId: string; from: OrderStatus; to: OrderStatus }) =>
     prisma.orderStatusEvent.create({ data }),

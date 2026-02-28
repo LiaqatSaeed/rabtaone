@@ -6,45 +6,57 @@ services:
     container_name: ideaapp-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ideaapp
-      POSTGRES_PASSWORD: ideaapp
-      POSTGRES_DB: ideaapp
+      POSTGRES_USER: ${POSTGRES_USER:-ideaapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ideaapp}
+      POSTGRES_DB: ${POSTGRES_DB:-ideaapp}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-55432}:5432"
     volumes:
       - ideaapp-db:/var/lib/postgresql/data
       - ../database/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ideaapp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
       context: ../
-      dockerfile: docker/backend.Dockerfile
+      dockerfile: docker/Dockerfile.backend
+    image: ideaapp-backend:latest
     container_name: ideaapp-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://ideaapp:ideaapp@db:5432/ideaapp
-      JWT_SECRET: change_me_to_a_long_random_string
-      JWT_EXPIRES_IN: 15m
-      REFRESH_TOKEN_EXPIRES_IN: 30d
-      SOCKET_IO_PATH: /socket.io
-      ERP_BASE_URL: https://erp.example.com
-      ERP_API_KEY: replace_me
-      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ideaapp}:${POSTGRES_PASSWORD:-ideaapp}@db:5432/${POSTGRES_DB:-ideaapp}
+      DB_HOST: db
+      POSTGRES_USER: ${POSTGRES_USER:-ideaapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ideaapp}
+      POSTGRES_DB: ${POSTGRES_DB:-ideaapp}
+      JWT_SECRET: ${JWT_SECRET:-change_me_to_a_long_random_string}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      REFRESH_TOKEN_EXPIRES_IN: ${REFRESH_TOKEN_EXPIRES_IN:-30d}
+      SOCKET_IO_PATH: ${SOCKET_IO_PATH:-/socket.io}
+      ERP_BASE_URL: ${ERP_BASE_URL:-https://erp.example.com}
+      ERP_API_KEY: ${ERP_API_KEY:-replace_me}
+      PORT: ${BACKEND_PORT:-7101}
     ports:
-      - "4000:4000"
+      - "${BACKEND_PORT:-7101}:${BACKEND_PORT:-7101}"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
     build:
       context: ../
-      dockerfile: docker/frontend.Dockerfile
+      dockerfile: docker/Dockerfile.frontend
+    image: ideaapp-frontend:latest
     container_name: ideaapp-frontend
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${BACKEND_PORT:-7101}
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-7100}:3000"
     depends_on:
       - backend
 

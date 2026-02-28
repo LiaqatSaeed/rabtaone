@@ -2,6 +2,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -38,7 +39,7 @@ model Account {
   email        String   @unique
   phone        String?  @unique
   passwordHash String
-  role         Role
+  roles        Role[]   @default([USER])
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -108,9 +109,11 @@ model Order {
   id              String      @id @default(cuid())
   userId          String
   merchantId      String?
+  industryType    String?
   status          OrderStatus @default(REQUESTED)
   prescriptionUrl String
   notes           String?
+  totalAmount     Float?
   shipName        String?
   shipPhone       String?
   shipAddress1    String?
@@ -119,6 +122,7 @@ model Order {
   shipState       String?
   shipPostalCode  String?
   shipCountry     String?
+  anonymizedAt    DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -132,6 +136,20 @@ model Order {
   syncEvents   SyncEvent[]
   syncRequests SyncRequest[]
   chats        ChatThread[]
+  uploadedFiles UploadedFile[]
+}
+
+model UploadedFile {
+  id           String   @id @default(cuid())
+  orderId      String?
+  url          String
+  storageType  String
+  storageKey   String?
+  createdAt    DateTime @default(now())
+
+  order        Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([createdAt])
 }
 
 model OrderItem {

@@ -6,44 +6,44 @@ import { logger } from "@/lib/logger";
 export const accessService = {
   async assertOrderAccess(input: {
     accountId: string;
-    role: string | null;
+    roles: string[] | null;
     orderId: string;
   }) {
-    const { accountId, role, orderId } = input;
+    const { accountId, roles, orderId } = input;
     if (!accountId) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
-    if (!role) {
-      logger.warn("Forbidden order access", { accountId, role, orderId, reason: "ROLE_MISSING" });
+    if (!roles || roles.length === 0) {
+      logger.warn("Forbidden order access", { accountId, roles, orderId, reason: "ROLE_MISSING" });
       throw new AppError("Forbidden", 403, "FORBIDDEN");
     }
 
     const order = await orderRepo.findById(orderId);
     if (!order) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
 
-    if (role === "USER") {
+    if (roles.includes("USER")) {
       const userId = await profileRepo.getUserProfileId(accountId);
       if (!userId || order.userId !== userId) {
-        logger.warn("Forbidden order access", { accountId, role, orderId, reason: "USER_MISMATCH" });
-        throw new AppError("Forbidden", 403, "FORBIDDEN");
+        logger.warn("Forbidden order access", { accountId, roles, orderId, reason: "USER_MISMATCH" });
+      } else {
+        return order;
       }
-      return order;
     }
 
-    if (role === "MERCHANT") {
+    if (roles.includes("MERCHANT")) {
       const merchantId = await profileRepo.getMerchantProfileId(accountId);
       if (!merchantId || order.merchantId !== merchantId) {
-        logger.warn("Forbidden order access", { accountId, role, orderId, reason: "MERCHANT_MISMATCH" });
-        throw new AppError("Forbidden", 403, "FORBIDDEN");
+        logger.warn("Forbidden order access", { accountId, roles, orderId, reason: "MERCHANT_MISMATCH" });
+      } else {
+        return order;
       }
-      return order;
     }
 
-    if (role === "DELIVERY") {
+    if (roles.includes("DELIVERY")) {
       const courierId = await profileRepo.getDeliveryProfileId(accountId);
       if (!courierId || order.deliveryJob?.assignedToId !== courierId) {
-        logger.warn("Forbidden order access", { accountId, role, orderId, reason: "DELIVERY_MISMATCH" });
-        throw new AppError("Forbidden", 403, "FORBIDDEN");
+        logger.warn("Forbidden order access", { accountId, roles, orderId, reason: "DELIVERY_MISMATCH" });
+      } else {
+        return order;
       }
-      return order;
     }
 
     throw new AppError("Forbidden", 403, "FORBIDDEN");

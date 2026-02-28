@@ -9,9 +9,9 @@ import { confirmSyncSchema } from "@/infrastructure/validation/zod-schemas/sync"
 
 export async function registerSyncRoutes(app: FastifyInstance) {
   app.get("/sync/pending", async (req, reply) => {
-    const role = req.user?.role ?? null;
+    const roles = req.user?.roles ?? null;
     const accountId = req.user?.sub ?? "";
-    requireRole(role, ["MERCHANT"], { accountId, action: "LIST_SYNC_PENDING" });
+    requireRole(roles, ["MERCHANT"], { accountId, action: "LIST_SYNC_PENDING" });
     if (!accountId) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     const merchantId = await profileRepo.getMerchantProfileId(accountId);
     if (!merchantId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
@@ -20,9 +20,9 @@ export async function registerSyncRoutes(app: FastifyInstance) {
   });
 
   app.post("/sync/:id/confirm", async (req, reply) => {
-    const role = req.user?.role ?? null;
+    const roles = req.user?.roles ?? null;
     const accountId = req.user?.sub ?? "";
-    requireRole(role, ["MERCHANT"], { accountId, action: "CONFIRM_SYNC" });
+    requireRole(roles, ["MERCHANT"], { accountId, action: "CONFIRM_SYNC" });
     if (!accountId) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     const merchantId = await profileRepo.getMerchantProfileId(accountId);
     if (!merchantId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
@@ -40,9 +40,9 @@ export async function registerSyncRoutes(app: FastifyInstance) {
   });
 
   app.post("/sync/order", async (req, reply) => {
-    const role = req.user?.role ?? null;
+    const roles = req.user?.roles ?? null;
     const accountId = req.user?.sub ?? "";
-    requireRole(role, ["MERCHANT"], { accountId, action: "ERP_SYNC" });
+    requireRole(roles, ["MERCHANT"], { accountId, action: "ERP_SYNC" });
 
     const payload = req.body as {
       orderId: string;
@@ -50,7 +50,7 @@ export async function registerSyncRoutes(app: FastifyInstance) {
       data: Record<string, unknown>;
     };
     if (!payload.orderId) throw new AppError("Missing orderId", 400, "MISSING_ORDER_ID");
-    await accessService.assertOrderAccess({ accountId, role, orderId: payload.orderId });
+    await accessService.assertOrderAccess({ accountId, roles, orderId: payload.orderId });
 
     await syncService.enqueueOrderSync(payload);
     const result = await syncService.sendOrder(payload);

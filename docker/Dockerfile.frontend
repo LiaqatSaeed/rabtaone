@@ -1,0 +1,17 @@
+FROM node:20-alpine
+WORKDIR /app
+RUN corepack enable
+
+COPY apps/merchant-web/package.json ./apps/merchant-web/package.json
+COPY pnpm-workspace.yaml package.json ./
+COPY docker/frontend.dockerignore ./apps/merchant-web/.dockerignore
+RUN pnpm install --filter ideaapp-merchant-web
+
+COPY apps/merchant-web/tsconfig.json apps/merchant-web/next.config.mjs apps/merchant-web/next-env.d.ts apps/merchant-web/tailwind.config.ts apps/merchant-web/postcss.config.js ./apps/merchant-web/
+COPY apps/merchant-web/src ./apps/merchant-web/src
+
+WORKDIR /app/apps/merchant-web
+RUN pnpm build
+
+EXPOSE 3000
+CMD ["pnpm", "start"]

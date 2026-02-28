@@ -61,6 +61,7 @@ export const syncService = {
       syncId,
       merchantId: input.merchantId,
       industryType: merchant.industryType,
+      createdAt: new Date().toISOString(),
       order: {
         id: order.id,
         items: order.items.map((item) => ({
@@ -69,7 +70,9 @@ export const syncService = {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         })),
-        totalAmount: order.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+        totalAmount:
+          order.totalAmount ??
+          order.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
         customer: {
           name: order.user.fullName,
           phone: order.user.account.phone ?? null,

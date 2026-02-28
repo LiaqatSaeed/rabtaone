@@ -20,9 +20,12 @@ export async function registerOrderRoutes(app: FastifyInstance) {
         throw new AppError("Declared total amount mismatch", 400, "TOTAL_MISMATCH");
       }
     }
+    const computedTotal = data.items?.length
+      ? data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+      : undefined;
     const accountId = req.user?.sub ?? "";
-    const role = req.user?.role ?? null;
-    requireRole(role, ["USER"], { accountId, action: "CREATE_ORDER" });
+    const roles = req.user?.roles ?? null;
+    requireRole(roles, ["USER"], { accountId, action: "CREATE_ORDER" });
     if (!accountId) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     const userId = await profileRepo.getUserProfileId(accountId);
     if (!userId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
@@ -30,6 +33,7 @@ export async function registerOrderRoutes(app: FastifyInstance) {
       userId,
       prescriptionUrl: data.prescriptionUrl,
       notes: data.notes,
+      totalAmount: data.declaredTotalAmount ?? computedTotal,
       shipName: data.shipping?.name,
       shipPhone: data.shipping?.phone,
       shipAddress1: data.shipping?.address1,
@@ -45,9 +49,20 @@ export async function registerOrderRoutes(app: FastifyInstance) {
 
   app.get("/orders", async (req, reply) => {
     const accountId = req.user?.sub ?? "";
-    const role = req.user?.role ?? null;
-    requireRole(role, ["USER"], { accountId, action: "LIST_ORDERS" });
+    const roles = req.user?.roles ?? null;
     if (!accountId) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+
+    const query = req.query as { merchant?: string; limit?: string };
+    const limit = query.limit ? Number(query.limit) : undefined;
+
+    if (roles?.includes("MERCHANT") && (query.merchant === "true" || typeof query.limit !== "undefined")) {
+      const merchantId = await profileRepo.getMerchantProfileId(accountId);
+      if (!merchantId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
+      const orders = await orderService.listForMerchant(merchantId, limit);
+      return ok(reply, orders);
+    }
+
+    requireRole(roles, ["USER"], { accountId, action: "LIST_ORDERS" });
     const userId = await profileRepo.getUserProfileId(accountId);
     if (!userId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
     const orders = await orderService.listForUser(userId);
@@ -56,22 +71,22 @@ export async function registerOrderRoutes(app: FastifyInstance) {
 
   app.get("/orders/:id", async (req, reply) => {
     const accountId = req.user?.sub ?? "";
-    const role = req.user?.role ?? null;
+    const roles = req.user?.roles ?? null;
     const orderId = (req.params as { id: string }).id;
-    const order = await accessService.assertOrderAccess({ accountId, role, orderId });
+    const order = await accessService.assertOrderAccess({ accountId, roles, orderId });
     return ok(reply, order);
   });
 
   app.patch("/orders/:id/status", async (req, reply) => {
-    const role = req.user?.role ?? null;
+    const roles = req.user?.roles ?? null;
     const accountId = req.user?.sub ?? "";
     const orderId = (req.params as { id: string }).id;
-    requireRole(role, ["USER", "MERCHANT", "DELIVERY"], {
+    requireRole(roles, ["USER", "MERCHANT", "DELIVERY"], {
       accountId,
       action: "UPDATE_ORDER_STATUS",
       resourceId: orderId,
     });
-    await accessService.assertOrderAccess({ accountId, role, orderId });
+    await accessService.assertOrderAccess({ accountId, roles, orderId });
 
     const data = updateOrderStatusSchema.parse(req.body);
     const roleAllowed: Record<string, string[]> = {
@@ -79,10 +94,14 @@ export async function registerOrderRoutes(app: FastifyInstance) {
       MERCHANT: ["ACCEPTED", "SYNC_PENDING", "SYNCED", "OUT_FOR_DELIVERY", "CANCELLED"],
       DELIVERY: ["OUT_FOR_DELIVERY", "COMPLETED"],
     };
-    if (!role || !(roleAllowed[role] ?? []).includes(data.status)) {
+    const isAllowed =
+      (roles?.includes("USER") && roleAllowed.USER.includes(data.status)) ||
+      (roles?.includes("MERCHANT") && roleAllowed.MERCHANT.includes(data.status)) ||
+      (roles?.includes("DELIVERY") && roleAllowed.DELIVERY.includes(data.status));
+    if (!isAllowed) {
       logger.warn("Forbidden order status transition", {
         accountId,
-        role,
+        roles,
         orderId,
         targetStatus: data.status,
       });
@@ -90,7 +109,7 @@ export async function registerOrderRoutes(app: FastifyInstance) {
     }
 
     let merchantId: string | undefined;
-    if (role === "MERCHANT" && data.status === "ACCEPTED") {
+    if (roles?.includes("MERCHANT") && data.status === "ACCEPTED") {
       merchantId = await profileRepo.getMerchantProfileId(accountId);
       if (!merchantId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
     }
@@ -100,17 +119,17 @@ export async function registerOrderRoutes(app: FastifyInstance) {
   });
 
   app.get("/orders/:id/proposals", async (req, reply) => {
-    const role = req.user?.role ?? null;
+    const roles = req.user?.roles ?? null;
     const accountId = req.user?.sub ?? "";
     const orderId = (req.params as { id: string }).id;
-    requireRole(role, ["USER", "MERCHANT"], {
+    requireRole(roles, ["USER", "MERCHANT"], {
       accountId,
       action: "LIST_PROPOSALS",
       resourceId: orderId,
     });
 
-    if (role === "USER") {
-      await accessService.assertOrderAccess({ accountId, role, orderId });
+    if (roles?.includes("USER")) {
+      await accessService.assertOrderAccess({ accountId, roles, orderId });
       const proposals = await proposalService.listForOrder(orderId);
       return ok(reply, proposals);
     }

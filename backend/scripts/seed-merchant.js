@@ -17,7 +17,7 @@ if (!jwtSecret) {
 async function main() {
   const existing = await prisma.account.findUnique({ where: { email } });
   if (existing) {
-    const token = jwt.sign({ sub: existing.id, role: existing.role }, jwtSecret, { expiresIn: "7d" });
+    const token = jwt.sign({ sub: existing.id, roles: existing.roles ?? ["MERCHANT"] }, jwtSecret, { expiresIn: "7d" });
     console.log("Existing merchant account found.");
     console.log("JWT:", token);
     return;
@@ -28,7 +28,7 @@ async function main() {
     data: {
       email,
       passwordHash,
-      role: "MERCHANT",
+      roles: ["MERCHANT"],
     },
   });
 
@@ -42,7 +42,7 @@ async function main() {
     },
   });
 
-  const token = jwt.sign({ sub: account.id, role: account.role }, jwtSecret, { expiresIn: "7d" });
+  const token = jwt.sign({ sub: account.id, roles: account.roles }, jwtSecret, { expiresIn: "7d" });
   console.log("Merchant created:", email);
   console.log("JWT:", token);
 }

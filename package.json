@@ -9,9 +9,11 @@
   },
   "scripts": {
     "dev:backend": "pnpm --filter ideaapp-backend dev",
-    "dev:frontend": "pnpm --filter ideaapp-frontend dev",
+    "dev:merchant-web": "pnpm --filter ideaapp-merchant-web dev",
+    "dev:mobile-app": "pnpm --filter rabtaone-mobile-app dev",
     "build:backend": "pnpm --filter ideaapp-backend build",
-    "build:frontend": "pnpm --filter ideaapp-frontend build",
+    "build:merchant-web": "pnpm --filter ideaapp-merchant-web build",
+    "build:mobile-app": "pnpm --filter rabtaone-mobile-app build",
     "prisma:generate": "pnpm --filter ideaapp-backend prisma:generate",
     "prisma:migrate": "pnpm --filter ideaapp-backend prisma:migrate"
   }

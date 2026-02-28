@@ -17,7 +17,7 @@ async function ensureUser() {
     data: {
       email: userEmail,
       passwordHash,
-      role: "USER",
+      roles: ["USER"],
       userProfile: { create: { fullName: "Demo User" } },
     },
   });
@@ -31,7 +31,7 @@ async function ensureMerchant() {
     data: {
       email: merchantEmail,
       passwordHash,
-      role: "MERCHANT",
+      roles: ["MERCHANT"],
       merchantProfile: {
         create: {
           name: "Demo Merchant",

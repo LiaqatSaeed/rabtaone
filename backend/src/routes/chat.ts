@@ -9,9 +9,9 @@ export async function registerChatRoutes(app: FastifyInstance) {
   app.get("/chat/threads/:orderId", async (req, reply) => {
     const orderId = (req.params as { orderId: string }).orderId;
     const accountId = req.user?.sub ?? "";
-    const role = req.user?.role ?? null;
+    const roles = req.user?.roles ?? null;
     if (!accountId) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
-    await accessService.assertOrderAccess({ accountId, role, orderId });
+    await accessService.assertOrderAccess({ accountId, roles, orderId });
     const thread = await chatService.getThread(orderId);
     const messages = await chatService.listMessages(thread.id);
     return ok(reply, { thread, messages });
@@ -19,11 +19,11 @@ export async function registerChatRoutes(app: FastifyInstance) {
 
   app.post("/chat/messages", async (req, reply) => {
     const accountId = req.user?.sub ?? "";
-    const role = req.user?.role ?? null;
+    const roles = req.user?.roles ?? null;
     if (!accountId) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
 
     const data = createChatMessageSchema.parse(req.body);
-    await accessService.assertOrderAccess({ accountId, role, orderId: data.orderId });
+    await accessService.assertOrderAccess({ accountId, roles, orderId: data.orderId });
 
     const message = await chatService.addMessage({
       orderId: data.orderId,

@@ -20,7 +20,7 @@ export const authService = {
       data: {
         email: input.email,
         passwordHash,
-        role: input.role,
+        roles: [input.role],
       },
     });
 
@@ -58,7 +58,7 @@ export const authService = {
     const ok = await bcrypt.compare(input.password, account.passwordHash);
     if (!ok) throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
 
-    const token = signAccessToken({ sub: account.id, role: account.role });
-    return { token, accountId: account.id, role: account.role };
+    const token = signAccessToken({ sub: account.id, roles: account.roles as unknown as string[] });
+    return { token, accountId: account.id, roles: account.roles };
   },
 };

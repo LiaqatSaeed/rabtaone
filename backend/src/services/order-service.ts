@@ -2,6 +2,7 @@ import { OrderStatus } from "@prisma/client";
 import { orderRepo } from "@/infrastructure/db/repositories/order-repo";
 import { AppError } from "@/infrastructure/http/error-middleware";
 import { syncService } from "@/services/sync-service";
+import { prisma } from "@/infrastructure/db/prisma";
 
 const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
   REQUESTED: ["PROPOSED", "CANCELLED"],
@@ -19,6 +20,8 @@ export const orderService = {
     userId: string;
     prescriptionUrl: string;
     notes?: string;
+    industryType?: string;
+    totalAmount?: number;
     shipName?: string;
     shipPhone?: string;
     shipAddress1?: string;
@@ -33,6 +36,9 @@ export const orderService = {
   getOrder: (id: string) => orderRepo.findById(id),
 
   listForUser: (userId: string) => orderRepo.listByUser(userId),
+
+  listForMerchant: (merchantId: string, limit?: number) =>
+    orderRepo.listByMerchant(merchantId, limit),
 
   async transitionStatus(orderId: string, to: OrderStatus, merchantId?: string) {
     const order = await orderRepo.findById(orderId);
@@ -54,6 +60,12 @@ export const orderService = {
       const resolvedMerchantId = order.merchantId ?? merchantId;
       if (!resolvedMerchantId) {
         throw new AppError("Missing merchant for order", 409, "MISSING_MERCHANT");
+      }
+      if (!order.industryType) {
+        const merchant = await prisma.merchantProfile.findUnique({ where: { id: resolvedMerchantId } });
+        if (merchant) {
+          await orderRepo.updateIndustryType(orderId, merchant.industryType);
+        }
       }
       await syncService.createSyncRequest({
         orderId: order.id,

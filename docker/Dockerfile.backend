@@ -1,0 +1,31 @@
+FROM node:20-bookworm-slim AS base
+WORKDIR /app
+RUN corepack enable
+
+# Install required dependencies including PostgreSQL client
+RUN apt-get update -y && \
+    apt-get install -y openssl postgresql-client && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY backend/package.json ./backend/package.json
+COPY pnpm-workspace.yaml package.json ./
+COPY docker/backend.dockerignore ./backend/.dockerignore
+RUN pnpm install --filter ideaapp-backend
+
+COPY backend/tsconfig.json ./backend/tsconfig.json
+COPY backend/prisma ./backend/prisma
+COPY backend/src ./backend/src
+COPY backend/scripts ./backend/scripts
+
+WORKDIR /app/backend
+RUN pnpm prisma:generate
+RUN pnpm build
+
+# Copy entrypoint script
+COPY docker/backend-entrypoint.sh /app/backend-entrypoint.sh
+RUN chmod +x /app/backend-entrypoint.sh
+
+# Expose port (will be set via environment variable, defaults to 4000)
+EXPOSE ${PORT:-4000}
+
+ENTRYPOINT ["/app/backend-entrypoint.sh"]

@@ -11,8 +11,8 @@ export async function registerProposalRoutes(app: FastifyInstance) {
   app.post("/proposals", async (req, reply) => {
     const data = createProposalSchema.parse(req.body);
     const accountId = req.user?.sub ?? "";
-    const role = req.user?.role ?? null;
-    requireRole(role, ["MERCHANT"], {
+    const roles = req.user?.roles ?? null;
+    requireRole(roles, ["MERCHANT"], {
       accountId,
       action: "CREATE_PROPOSAL",
       resourceId: data.orderId,
