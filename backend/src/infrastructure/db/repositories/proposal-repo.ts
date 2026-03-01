@@ -22,4 +22,14 @@ export const proposalRepo = {
     const count = await prisma.proposal.count({ where: { orderId, merchantId } });
     return count > 0;
   },
+
+  findById: (id: string) => prisma.proposal.findUnique({ where: { id } }),
+
+  acceptAndRejectOthers: async (orderId: string, proposalId: string) => {
+    await prisma.proposal.update({ where: { id: proposalId }, data: { status: "ACCEPTED" } });
+    await prisma.proposal.updateMany({
+      where: { orderId, id: { not: proposalId } },
+      data: { status: "REJECTED" },
+    });
+  },
 };

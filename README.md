@@ -43,6 +43,12 @@ Edit `docker/.env` and update any values as needed (optional - defaults work out
 ./docker/start.sh start
 ```
 
+**Option B: Using Makefile helpers**
+```bash
+make up
+make smoke-up
+```
+
 **Option B: Using docker compose directly**
 ```bash
 docker compose -f docker/docker-compose.yml up --build
@@ -82,6 +88,24 @@ docker compose -f docker/docker-compose.yml down
 
 # Remove volumes (database data):
 docker compose -f docker/docker-compose.yml down -v
+```
+
+### 5. E2E Smoke Testing
+
+```bash
+# Start stack + run the E2E smoke test
+make smoke-up
+
+# Run smoke test only (backend must already be running)
+make smoke
+
+# Reset synthetic E2E data
+make reset
+```
+
+Override API URL if needed:
+```bash
+API_BASE_URL=http://localhost:7101 make smoke
 ```
 
 ---

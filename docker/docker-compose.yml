@@ -40,6 +40,7 @@ services:
       ERP_BASE_URL: ${ERP_BASE_URL:-https://erp.example.com}
       ERP_API_KEY: ${ERP_API_KEY:-replace_me}
       PORT: ${BACKEND_PORT:-7101}
+      E2E_MODE: ${E2E_MODE:-false}
     ports:
       - "${BACKEND_PORT:-7101}:${BACKEND_PORT:-7101}"
     depends_on:

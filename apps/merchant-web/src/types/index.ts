@@ -4,6 +4,9 @@ export type OrderStatus =
   | "ACCEPTED"
   | "SYNC_PENDING"
   | "SYNCED"
+  | "PAYMENT_PENDING"
+  | "PAYMENT_VERIFIED"
+  | "READY_FOR_DELIVERY"
   | "OUT_FOR_DELIVERY"
   | "COMPLETED"
   | "CANCELLED";
@@ -28,6 +31,7 @@ export type Order = {
   shipState?: string | null;
   shipPostalCode?: string | null;
   shipCountry?: string | null;
+  deliveryDraft?: { status: string } | null;
 };
 
 export type SyncRequestPayload = {

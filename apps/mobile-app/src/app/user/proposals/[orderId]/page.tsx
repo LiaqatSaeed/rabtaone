@@ -11,6 +11,7 @@ export default function ProposalsPage() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -31,9 +32,21 @@ export default function ProposalsPage() {
   }, [orderId]);
 
   const acceptProposal = async (proposalId: string) => {
-    setMessage("Accepted proposal. Updating...");
-    // optimistic UX; backend endpoint TBD
-    setTimeout(() => setMessage("Proposal accepted."), 800);
+    setMessage(null);
+    setBusyId(proposalId);
+    try {
+      await apiFetch(`/api/v1/orders/${orderId}/accept-proposal`, {
+        method: "POST",
+        body: JSON.stringify({ proposalId }),
+      });
+      setMessage("Proposal accepted. Awaiting sync.");
+      const updated = await apiFetch<Proposal[]>(`/api/v1/orders/${orderId}/proposals`);
+      setProposals(updated || []);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Failed to accept proposal");
+    } finally {
+      setBusyId(null);
+    }
   };
 
   if (loading) {
@@ -60,11 +73,16 @@ export default function ProposalsPage() {
                     <div>
                       <p className="text-sm font-medium">Merchant {p.merchantId.slice(0, 6)}</p>
                       <p className="text-xs text-slate-500">Delivery: {p.deliveryOption}</p>
+                      {p.status && <p className="text-xs text-slate-500">Status: {p.status}</p>}
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold">${(p.priceCents / 100).toFixed(2)}</p>
-                      <Button className="mt-2" onClick={() => acceptProposal(p.id)}>
-                        Accept
+                      <Button
+                        className="mt-2"
+                        onClick={() => acceptProposal(p.id)}
+                        disabled={busyId === p.id || p.status === "ACCEPTED" || p.status === "REJECTED"}
+                      >
+                        {busyId === p.id ? "Accepting..." : "Accept"}
                       </Button>
                     </div>
                   </div>

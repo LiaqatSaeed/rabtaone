@@ -49,7 +49,7 @@ export const orderRepo = {
   findById: (id: string) =>
     prisma.order.findUnique({
       where: { id },
-      include: { proposals: true, statusEvents: true, deliveryJob: true, items: true },
+      include: { proposals: true, statusEvents: true, deliveryJob: true, deliveryDraft: true, items: true },
     }),
 
   listByUser: (userId: string) =>
@@ -58,7 +58,7 @@ export const orderRepo = {
   listByMerchant: (merchantId: string, limit?: number) =>
     prisma.order.findMany({
       where: { merchantId },
-      include: { items: true },
+      include: { items: true, deliveryDraft: true },
       orderBy: { createdAt: "desc" },
       take: limit,
     }),

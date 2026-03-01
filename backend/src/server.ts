@@ -39,15 +39,19 @@ async function start() {
 
   console.log(`API listening on :${port}`);
 
-  cleanupService.runAll().catch((err) => {
-    app.log.error({ err }, "Cleanup job failed");
-  });
-
-  setInterval(() => {
+  if (process.env.E2E_MODE !== "true") {
     cleanupService.runAll().catch((err) => {
       app.log.error({ err }, "Cleanup job failed");
     });
-  }, 60 * 60 * 1000);
+
+    setInterval(() => {
+      cleanupService.runAll().catch((err) => {
+        app.log.error({ err }, "Cleanup job failed");
+      });
+    }, 60 * 60 * 1000);
+  } else {
+    app.log.info("E2E_MODE enabled: cleanup scheduler disabled");
+  }
 }
 
 start().catch((err) => {

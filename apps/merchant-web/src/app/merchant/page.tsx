@@ -61,8 +61,11 @@ export default function MerchantOverviewPage() {
     };
 
     const totalOrdersToday = orders.filter((o) => isToday(o.createdAt)).length;
-    const pendingOrders = orders.filter((o) => ["REQUESTED", "PROPOSED", "ACCEPTED"].includes(o.status)).length;
-    const syncedToday = orders.filter((o) => o.status === "SYNCED" && isToday(o.createdAt)).length;
+    const pendingOrders = orders.filter((o) => !["COMPLETED", "CANCELLED"].includes(o.status)).length;
+    const syncedToday = orders.filter(
+      (o) =>
+        ["SYNCED", "PAYMENT_PENDING", "PAYMENT_VERIFIED", "READY_FOR_DELIVERY"].includes(o.status) && isToday(o.createdAt)
+    ).length;
 
     return {
       totalOrdersToday,

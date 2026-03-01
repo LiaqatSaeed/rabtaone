@@ -1,5 +1,10 @@
 import type { FastifyInstance } from "fastify";
-import { createOrderSchema, updateOrderStatusSchema } from "@/infrastructure/validation/zod-schemas/orders";
+import {
+  acceptProposalSchema,
+  createOrderSchema,
+  submitPaymentSchema,
+  updateOrderStatusSchema,
+} from "@/infrastructure/validation/zod-schemas/orders";
 import { orderService } from "@/services/order-service";
 import { created, ok } from "@/infrastructure/http/response";
 import { AppError } from "@/infrastructure/http/error-middleware";
@@ -91,7 +96,7 @@ export async function registerOrderRoutes(app: FastifyInstance) {
     const data = updateOrderStatusSchema.parse(req.body);
     const roleAllowed: Record<string, string[]> = {
       USER: ["CANCELLED"],
-      MERCHANT: ["ACCEPTED", "SYNC_PENDING", "SYNCED", "OUT_FOR_DELIVERY", "CANCELLED"],
+      MERCHANT: ["SYNC_PENDING", "SYNCED", "READY_FOR_DELIVERY", "CANCELLED"],
       DELIVERY: ["OUT_FOR_DELIVERY", "COMPLETED"],
     };
     const isAllowed =
@@ -116,6 +121,51 @@ export async function registerOrderRoutes(app: FastifyInstance) {
 
     const order = await orderService.transitionStatus(orderId, data.status, merchantId);
     return ok(reply, order);
+  });
+
+  app.post("/orders/:id/accept-proposal", async (req, reply) => {
+    const roles = req.user?.roles ?? null;
+    const accountId = req.user?.sub ?? "";
+    const orderId = (req.params as { id: string }).id;
+    requireRole(roles, ["USER"], { accountId, action: "ACCEPT_PROPOSAL", resourceId: orderId });
+    await accessService.assertOrderAccess({ accountId, roles, orderId });
+
+    const data = acceptProposalSchema.parse(req.body);
+    const order = await orderService.acceptProposal({ orderId, proposalId: data.proposalId });
+    return ok(reply, order);
+  });
+
+  app.post("/orders/:id/payment/submit", async (req, reply) => {
+    const roles = req.user?.roles ?? null;
+    const accountId = req.user?.sub ?? "";
+    const orderId = (req.params as { id: string }).id;
+    requireRole(roles, ["USER"], { accountId, action: "SUBMIT_PAYMENT", resourceId: orderId });
+    await accessService.assertOrderAccess({ accountId, roles, orderId });
+
+    const data = submitPaymentSchema.parse(req.body);
+    const order = await orderService.submitPayment({
+      orderId,
+      paymentProofFileId: data.paymentProofFileId,
+      message: data.message,
+    });
+    return ok(reply, order);
+  });
+
+  app.post("/orders/:id/payment/verify", async (req, reply) => {
+    const roles = req.user?.roles ?? null;
+    const accountId = req.user?.sub ?? "";
+    const orderId = (req.params as { id: string }).id;
+    requireRole(roles, ["MERCHANT"], { accountId, action: "VERIFY_PAYMENT", resourceId: orderId });
+
+    const merchantId = await profileRepo.getMerchantProfileId(accountId);
+    if (!merchantId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
+    const order = await orderService.getOrder(orderId);
+    if (!order || order.merchantId !== merchantId) {
+      throw new AppError("Forbidden", 403, "FORBIDDEN");
+    }
+
+    const updated = await orderService.verifyPayment({ orderId });
+    return ok(reply, updated);
   });
 
   app.get("/orders/:id/proposals", async (req, reply) => {

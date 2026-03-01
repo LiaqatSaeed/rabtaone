@@ -16,6 +16,9 @@ const statusVariant: Record<string, "neutral" | "warning" | "success" | "danger"
   ACCEPTED: "warning",
   SYNC_PENDING: "warning",
   SYNCED: "success",
+  PAYMENT_PENDING: "warning",
+  PAYMENT_VERIFIED: "success",
+  READY_FOR_DELIVERY: "primary",
   COMPLETED: "primary",
   OUT_FOR_DELIVERY: "primary",
   CANCELLED: "danger",
@@ -32,7 +35,14 @@ function formatAmount(order: Order) {
 }
 
 function syncStatus(order: Order) {
-  if (order.status === "SYNCED" || order.status === "COMPLETED" || order.status === "OUT_FOR_DELIVERY") {
+  if (
+    order.status === "SYNCED" ||
+    order.status === "PAYMENT_PENDING" ||
+    order.status === "PAYMENT_VERIFIED" ||
+    order.status === "READY_FOR_DELIVERY" ||
+    order.status === "OUT_FOR_DELIVERY" ||
+    order.status === "COMPLETED"
+  ) {
     return "SYNCED";
   }
   if (["ACCEPTED", "SYNC_PENDING"].includes(order.status)) {
@@ -65,7 +75,7 @@ export default function OrdersPage() {
     loadOrders();
   }, []);
 
-  const updateStatus = async (id: string, status: "ACCEPTED" | "CANCELLED") => {
+  const updateStatus = async (id: string, status: "READY_FOR_DELIVERY" | "CANCELLED") => {
     setActionMessage(null);
     try {
       setActionId(id);
@@ -73,10 +83,24 @@ export default function OrdersPage() {
         method: "PATCH",
         body: JSON.stringify({ status }),
       });
-      setActionMessage(`Order ${status.toLowerCase()} successfully.`);
+      setActionMessage(`Order ${status.replaceAll("_", " ").toLowerCase()} successfully.`);
       await loadOrders();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update order");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const verifyPayment = async (id: string) => {
+    setActionMessage(null);
+    try {
+      setActionId(id);
+      await apiFetch(`/api/v1/orders/${id}/payment/verify`, { method: "POST" });
+      setActionMessage("Payment verified.");
+      await loadOrders();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to verify payment");
     } finally {
       setActionId(null);
     }
@@ -137,13 +161,24 @@ export default function OrdersPage() {
                       <TableCell>{formatDate(order.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="secondary"
-                            onClick={() => updateStatus(order.id, "ACCEPTED")}
-                            disabled={["ACCEPTED", "SYNCED", "COMPLETED"].includes(order.status) || actionId === order.id}
-                          >
-                            {actionId === order.id ? "Updating..." : "Accept"}
-                          </Button>
+                          {order.status === "PAYMENT_PENDING" && (
+                            <Button
+                              variant="secondary"
+                              onClick={() => verifyPayment(order.id)}
+                              disabled={actionId === order.id}
+                            >
+                              {actionId === order.id ? "Verifying..." : "Verify Payment"}
+                            </Button>
+                          )}
+                          {order.status === "PAYMENT_VERIFIED" && (
+                            <Button
+                              variant="secondary"
+                              onClick={() => updateStatus(order.id, "READY_FOR_DELIVERY")}
+                              disabled={actionId === order.id}
+                            >
+                              {actionId === order.id ? "Updating..." : "Mark Ready"}
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             onClick={() => updateStatus(order.id, "CANCELLED")}

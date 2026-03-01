@@ -37,8 +37,24 @@ export const updateOrderStatusSchema = z.object({
     "ACCEPTED",
     "SYNC_PENDING",
     "SYNCED",
+    "PAYMENT_PENDING",
+    "PAYMENT_VERIFIED",
+    "READY_FOR_DELIVERY",
     "OUT_FOR_DELIVERY",
     "COMPLETED",
     "CANCELLED",
   ]),
 });
+
+export const acceptProposalSchema = z.object({
+  proposalId: z.string().min(1),
+});
+
+export const submitPaymentSchema = z
+  .object({
+    paymentProofFileId: z.string().min(1).optional(),
+    message: z.string().min(1).max(500).optional(),
+  })
+  .refine((data) => data.paymentProofFileId || data.message, {
+    message: "Payment proof or message is required",
+  });

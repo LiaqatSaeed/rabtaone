@@ -6,12 +6,23 @@ import { apiFetch } from "@rabtaone/api-client";
 import type { Order } from "@rabtaone/types";
 import { Badge, Card, CardBody, CardHeader, Button, Skeleton } from "@rabtaone/ui";
 
-const steps = ["REQUESTED", "ACCEPTED", "SYNCED", "READY_FOR_DELIVERY", "COMPLETED"];
+const steps = [
+  "REQUESTED",
+  "ACCEPTED",
+  "SYNCED",
+  "PAYMENT_PENDING",
+  "PAYMENT_VERIFIED",
+  "READY_FOR_DELIVERY",
+  "COMPLETED",
+];
 
 export default function OrderDetailPage() {
   const { id } = useParams();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -64,8 +75,35 @@ export default function OrderDetailPage() {
       <Card>
         <CardHeader title="Payment" subtitle="Upload payment screenshot" />
         <CardBody>
-          <input type="file" accept="image/*" className="text-sm" />
-          <Button className="mt-3">Upload Screenshot</Button>
+          {message && <p className="text-sm text-emerald-600 mb-2">{message}</p>}
+          <input type="file" accept="image/*" className="text-sm" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <Button
+            className="mt-3"
+            disabled={submitting || order.status !== "SYNCED"}
+            onClick={async () => {
+              if (!order) return;
+              try {
+                setSubmitting(true);
+                const note = file ? `Payment screenshot: ${file.name}` : "Payment submitted";
+                await apiFetch(`/api/v1/orders/${order.id}/payment/submit`, {
+                  method: "POST",
+                  body: JSON.stringify({ message: note }),
+                });
+                setMessage("Payment submitted. Awaiting verification.");
+                const updated = await apiFetch<Order>(`/api/v1/orders/${order.id}`);
+                setOrder(updated);
+              } catch (err) {
+                setMessage(err instanceof Error ? err.message : "Failed to submit payment");
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          >
+            {submitting ? "Submitting..." : "Submit Payment"}
+          </Button>
+          {order.status !== "SYNCED" && (
+            <p className="mt-2 text-xs text-slate-500">Payment becomes available after sync is complete.</p>
+          )}
         </CardBody>
       </Card>
     </div>

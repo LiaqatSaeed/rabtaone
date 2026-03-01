@@ -16,6 +16,9 @@ const statusVariant: Record<string, "neutral" | "warning" | "success" | "danger"
   ACCEPTED: "warning",
   SYNC_PENDING: "warning",
   SYNCED: "success",
+  PAYMENT_PENDING: "warning",
+  PAYMENT_VERIFIED: "success",
+  READY_FOR_DELIVERY: "primary",
   COMPLETED: "primary",
   OUT_FOR_DELIVERY: "primary",
   CANCELLED: "danger",
@@ -37,6 +40,7 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionId, setActionId] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -74,6 +78,34 @@ export default function OrderDetailPage() {
   }
 
   const total = formatAmount(order);
+
+  const refresh = async () => {
+    const data = await apiFetch<Order>(`/api/v1/orders/${orderId}`);
+    setOrder(data);
+  };
+
+  const verifyPayment = async () => {
+    setActionId(orderId);
+    try {
+      await apiFetch(`/api/v1/orders/${orderId}/payment/verify`, { method: "POST" });
+      await refresh();
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const markReady = async () => {
+    setActionId(orderId);
+    try {
+      await apiFetch(`/api/v1/orders/${orderId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "READY_FOR_DELIVERY" }),
+      });
+      await refresh();
+    } finally {
+      setActionId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -170,10 +202,50 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Sync Status</span>
-                  <Badge variant={order.status === "SYNCED" ? "success" : "warning"}>
-                    {order.status === "SYNCED" ? "SYNCED" : "PENDING"}
+                  <Badge
+                    variant={
+                      ["SYNCED", "PAYMENT_PENDING", "PAYMENT_VERIFIED", "READY_FOR_DELIVERY", "COMPLETED"].includes(
+                        order.status
+                      )
+                        ? "success"
+                        : "warning"
+                    }
+                  >
+                    {["SYNCED", "PAYMENT_PENDING", "PAYMENT_VERIFIED", "READY_FOR_DELIVERY", "COMPLETED"].includes(
+                      order.status
+                    )
+                      ? "SYNCED"
+                      : "PENDING"}
                   </Badge>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span>Payment</span>
+                  <Badge variant={order.status === "PAYMENT_PENDING" ? "warning" : "success"}>
+                    {order.status === "PAYMENT_PENDING"
+                      ? "PENDING"
+                      : order.status === "PAYMENT_VERIFIED"
+                        ? "VERIFIED"
+                        : "-"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Delivery Draft</span>
+                  <Badge variant={order.deliveryDraft ? "primary" : "neutral"}>
+                    {order.deliveryDraft?.status || "-"}
+                  </Badge>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col gap-2">
+                {order.status === "PAYMENT_PENDING" && (
+                  <Button onClick={verifyPayment} disabled={actionId === orderId}>
+                    {actionId === orderId ? "Verifying..." : "Verify Payment"}
+                  </Button>
+                )}
+                {order.status === "PAYMENT_VERIFIED" && (
+                  <Button onClick={markReady} disabled={actionId === orderId}>
+                    {actionId === orderId ? "Updating..." : "Mark Ready For Delivery"}
+                  </Button>
+                )}
               </div>
             </CardBody>
           </Card>

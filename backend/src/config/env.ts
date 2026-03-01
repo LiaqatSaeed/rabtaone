@@ -8,6 +8,9 @@ const envSchema = z.object({
   SOCKET_IO_PATH: z.string().default("/api/socket"),
   ERP_BASE_URL: z.string().optional(),
   ERP_API_KEY: z.string().optional(),
+  BUILD_TIME: z.string().optional(),
+  GIT_COMMIT: z.string().optional(),
+  DOCS_VERSION: z.string().optional(),
 });
 
 export const env = envSchema.parse({
@@ -18,4 +21,7 @@ export const env = envSchema.parse({
   SOCKET_IO_PATH: process.env.SOCKET_IO_PATH,
   ERP_BASE_URL: process.env.ERP_BASE_URL,
   ERP_API_KEY: process.env.ERP_API_KEY,
+  BUILD_TIME: process.env.BUILD_TIME,
+  GIT_COMMIT: process.env.GIT_COMMIT,
+  DOCS_VERSION: process.env.DOCS_VERSION,
 });

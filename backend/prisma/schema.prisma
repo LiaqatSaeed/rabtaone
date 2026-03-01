@@ -23,8 +23,25 @@ enum OrderStatus {
   ACCEPTED
   SYNC_PENDING
   SYNCED
+  PAYMENT_PENDING
+  PAYMENT_VERIFIED
+  READY_FOR_DELIVERY
   OUT_FOR_DELIVERY
   COMPLETED
+  CANCELLED
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum DeliveryStatus {
+  OPEN
+  ASSIGNED
+  PICKED
+  DELIVERED
   CANCELLED
 }
 
@@ -114,6 +131,8 @@ model Order {
   prescriptionUrl String
   notes           String?
   totalAmount     Float?
+  paymentProofFileId String?
+  paymentNote     String?
   shipName        String?
   shipPhone       String?
   shipAddress1    String?
@@ -132,11 +151,15 @@ model Order {
   items        OrderItem[]
   proposals    Proposal[]
   deliveryJob  DeliveryJob?
+  deliveryDraft DeliveryDraft?
   statusEvents OrderStatusEvent[]
   syncEvents   SyncEvent[]
   syncRequests SyncRequest[]
   chats        ChatThread[]
   uploadedFiles UploadedFile[]
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model UploadedFile {
@@ -173,6 +196,7 @@ model Proposal {
   priceCents     Int
   availability   String
   deliveryOption String
+  status         ProposalStatus @default(PENDING)
   createdAt      DateTime @default(now())
 
   order       Order           @relation(fields: [orderId], references: [id])
@@ -194,6 +218,24 @@ model DeliveryJob {
   assignedTo DeliveryProfile?  @relation(fields: [assignedToId], references: [id])
   bids       DeliveryBid[]
   locations  DeliveryLocation[]
+}
+
+model DeliveryDraft {
+  id        String         @id @default(uuid())
+  orderId   String         @unique
+  pickupLat Float?
+  pickupLng Float?
+  dropLat   Float?
+  dropLng   Float?
+  status    DeliveryStatus @default(OPEN)
+  riderId   String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  order     Order          @relation(fields: [orderId], references: [id])
+  rider     DeliveryProfile? @relation(fields: [riderId], references: [id])
+
+  @@index([status])
 }
 
 model DeliveryBid {
@@ -284,4 +326,5 @@ model SyncRequest {
 
   @@index([merchantId, status])
   @@index([orderId])
+  @@index([status])
 }

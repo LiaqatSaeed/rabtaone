@@ -7,11 +7,14 @@ export const authService = {
   async register(input: {
     email: string;
     password: string;
-    role: "USER" | "MERCHANT" | "DELIVERY";
+    role: "USER" | "MERCHANT" | "DELIVERY" | "ADMIN";
     fullName?: string;
     businessName?: string;
     industryType?: string;
   }) {
+    if (input.role === "ADMIN" && process.env.E2E_MODE !== "true") {
+      throw new AppError("Admin registration disabled", 403, "ADMIN_REGISTRATION_DISABLED");
+    }
     const existing = await prisma.account.findUnique({ where: { email: input.email } });
     if (existing) throw new AppError("Email already in use", 409, "EMAIL_TAKEN");
 

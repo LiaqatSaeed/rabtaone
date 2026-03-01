@@ -6,9 +6,14 @@ export type OrderStatus =
   | "ACCEPTED"
   | "SYNC_PENDING"
   | "SYNCED"
+  | "PAYMENT_PENDING"
+  | "PAYMENT_VERIFIED"
+  | "READY_FOR_DELIVERY"
   | "OUT_FOR_DELIVERY"
   | "COMPLETED"
   | "CANCELLED";
+
+export type DeliveryStatus = "OPEN" | "ASSIGNED" | "PICKED" | "DELIVERED" | "CANCELLED";
 
 export type OrderItem = {
   sku: string;
@@ -21,6 +26,8 @@ export type Order = {
   id: string;
   status: OrderStatus;
   createdAt: string;
+  paymentProofFileId?: string | null;
+  paymentNote?: string | null;
   items?: OrderItem[];
   shipName?: string | null;
   shipPhone?: string | null;
@@ -30,6 +37,7 @@ export type Order = {
   shipState?: string | null;
   shipPostalCode?: string | null;
   shipCountry?: string | null;
+  deliveryDraft?: DeliveryDraft | null;
 };
 
 export type Proposal = {
@@ -39,6 +47,7 @@ export type Proposal = {
   priceCents: number;
   availability: string;
   deliveryOption: string;
+  status?: "PENDING" | "ACCEPTED" | "REJECTED";
   createdAt: string;
 };
 
@@ -65,9 +74,20 @@ export type SyncRequestPayload = {
   };
 };
 
+export type DeliveryDraft = {
+  id: string;
+  orderId: string;
+  status: DeliveryStatus;
+  riderId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  order?: Order;
+};
+
 export type JwtPayload = {
   sub: string;
-  role: Role;
+  roles?: Role[];
+  role?: Role;
   name?: string;
   industryType?: string;
 };
