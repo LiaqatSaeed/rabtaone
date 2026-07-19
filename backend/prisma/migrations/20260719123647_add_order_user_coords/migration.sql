@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Order" ADD COLUMN     "userLat" DOUBLE PRECISION,
+ADD COLUMN     "userLng" DOUBLE PRECISION;

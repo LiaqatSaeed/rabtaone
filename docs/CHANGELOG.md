@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.3
+- Added E2E verify runner and Makefile verify targets
+- Added ops troubleshooting guide
+- Migration readiness notes
+
 ## v0.5.2
 - Added Makefile helpers (make smoke-up, smoke, reset)
 - Added E2E reset script with safe deletion of synthetic records

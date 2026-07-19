@@ -41,6 +41,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [deliveryMode, setDeliveryMode] = useState<"RABTAONE" | "OWN">("RABTAONE");
 
   useEffect(() => {
     let mounted = true;
@@ -99,7 +100,7 @@ export default function OrderDetailPage() {
     try {
       await apiFetch(`/api/v1/orders/${orderId}/status`, {
         method: "PATCH",
-        body: JSON.stringify({ status: "READY_FOR_DELIVERY" }),
+        body: JSON.stringify({ status: "READY_FOR_DELIVERY", deliveryMode }),
       });
       await refresh();
     } finally {
@@ -242,9 +243,29 @@ export default function OrderDetailPage() {
                   </Button>
                 )}
                 {order.status === "PAYMENT_VERIFIED" && (
-                  <Button onClick={markReady} disabled={actionId === orderId}>
-                    {actionId === orderId ? "Updating..." : "Mark Ready For Delivery"}
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3 text-xs text-slate-600">
+                      <label className="flex items-center gap-1">
+                        <input
+                          type="radio"
+                          checked={deliveryMode === "RABTAONE"}
+                          onChange={() => setDeliveryMode("RABTAONE")}
+                        />
+                        Request RabtaOne Rider
+                      </label>
+                      <label className="flex items-center gap-1">
+                        <input
+                          type="radio"
+                          checked={deliveryMode === "OWN"}
+                          onChange={() => setDeliveryMode("OWN")}
+                        />
+                        Own Delivery
+                      </label>
+                    </div>
+                    <Button onClick={markReady} disabled={actionId === orderId}>
+                      {actionId === orderId ? "Updating..." : "Mark Ready For Delivery"}
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardBody>

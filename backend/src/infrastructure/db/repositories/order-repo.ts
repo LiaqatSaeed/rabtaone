@@ -16,6 +16,8 @@ export const orderRepo = {
     shipState?: string;
     shipPostalCode?: string;
     shipCountry?: string;
+    userLat?: number;
+    userLng?: number;
     items?: { sku: string; name: string; quantity: number; unitPrice: number }[];
   }) =>
     prisma.order.create({
@@ -33,6 +35,8 @@ export const orderRepo = {
         shipState: data.shipState,
         shipPostalCode: data.shipPostalCode,
         shipCountry: data.shipCountry,
+        userLat: data.userLat,
+        userLng: data.userLng,
         items: data.items?.length
           ? {
               create: data.items.map((item) => ({
@@ -49,7 +53,15 @@ export const orderRepo = {
   findById: (id: string) =>
     prisma.order.findUnique({
       where: { id },
-      include: { proposals: true, statusEvents: true, deliveryJob: true, deliveryDraft: true, items: true },
+      include: {
+        proposals: true,
+        statusEvents: true,
+        deliveryJob: true,
+        deliveryDraft: true,
+        items: true,
+        merchant: true,
+        user: { include: { account: true } },
+      },
     }),
 
   listByUser: (userId: string) =>

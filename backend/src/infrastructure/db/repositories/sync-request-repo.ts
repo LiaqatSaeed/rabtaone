@@ -16,6 +16,12 @@ export const syncRequestRepo = {
       orderBy: { createdAt: "asc" },
     }),
 
+  findByMerchant: (merchantId: string, statuses: SyncStatus[]) =>
+    prisma.syncRequest.findMany({
+      where: { merchantId, status: { in: statuses } },
+      orderBy: { createdAt: "desc" },
+    }),
+
   findById: (id: string) =>
     prisma.syncRequest.findUnique({
       where: { id },

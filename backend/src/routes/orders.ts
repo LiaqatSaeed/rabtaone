@@ -47,6 +47,8 @@ export async function registerOrderRoutes(app: FastifyInstance) {
       shipState: data.shipping?.state,
       shipPostalCode: data.shipping?.postalCode,
       shipCountry: data.shipping?.country,
+      userLat: data.userLat,
+      userLng: data.userLng,
       items: data.items,
     });
     return created(reply, order);
@@ -119,7 +121,10 @@ export async function registerOrderRoutes(app: FastifyInstance) {
       if (!merchantId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
     }
 
-    const order = await orderService.transitionStatus(orderId, data.status, merchantId);
+    const deliveryMode =
+      roles?.includes("MERCHANT") && data.status === "READY_FOR_DELIVERY" ? data.deliveryMode : undefined;
+
+    const order = await orderService.transitionStatus(orderId, data.status, merchantId, deliveryMode);
     return ok(reply, order);
   });
 

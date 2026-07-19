@@ -15,6 +15,13 @@ export async function registerSyncRoutes(app: FastifyInstance) {
     if (!accountId) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     const merchantId = await profileRepo.getMerchantProfileId(accountId);
     if (!merchantId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
+
+    const status = (req.query as { status?: string }).status;
+    if (status === "all") {
+      const all = await syncService.listByMerchant(merchantId, ["PENDING", "SYNCED"]);
+      return ok(reply, all);
+    }
+
     const pending = await syncService.listPendingByMerchant(merchantId);
     return ok(reply, pending);
   });

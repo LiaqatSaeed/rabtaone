@@ -15,4 +15,6 @@ export const profileRepo = {
     const profile = await prisma.deliveryProfile.findUnique({ where: { accountId } });
     return profile?.id ?? null;
   },
+
+  getDeliveryProfile: (accountId: string) => prisma.deliveryProfile.findUnique({ where: { accountId } }),
 };

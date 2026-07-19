@@ -54,6 +54,8 @@ export default function OrderDetailPage() {
     return <div className="p-5 text-sm text-slate-600">Order not found.</div>;
   }
 
+  const acceptedProposal = order.proposals?.find((p) => p.status === "ACCEPTED");
+
   return (
     <div className="p-5 space-y-5">
       <Card>
@@ -72,9 +74,44 @@ export default function OrderDetailPage() {
         </CardBody>
       </Card>
 
+      {(order.merchant || acceptedProposal) && (
+        <Card>
+          <CardHeader title="Merchant" subtitle="Accepted proposal" />
+          <CardBody>
+            <div className="space-y-2 text-sm">
+              {order.merchant && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Merchant</span>
+                  <span className="font-medium text-slate-800">{order.merchant.name}</span>
+                </div>
+              )}
+              {acceptedProposal && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Price</span>
+                    <span className="font-medium text-slate-800">
+                      {(acceptedProposal.priceCents / 100).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Delivery</span>
+                    <span className="font-medium text-slate-800">{acceptedProposal.deliveryOption}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       <Card>
         <CardHeader title="Payment" subtitle="Upload payment screenshot" />
         <CardBody>
+          {order.status === "PAYMENT_PENDING" && (
+            <p className="text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mb-3">
+              Payment submitted. The merchant will verify it shortly — no further action needed.
+            </p>
+          )}
           {message && <p className="text-sm text-emerald-600 mb-2">{message}</p>}
           <input type="file" accept="image/*" className="text-sm" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           <Button

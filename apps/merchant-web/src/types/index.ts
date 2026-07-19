@@ -60,7 +60,11 @@ export type SyncRequestPayload = {
   };
 };
 
-export type SyncRequest = SyncRequestPayload;
+export type SyncRequest = SyncRequestPayload & {
+  status?: "PENDING" | "SYNCED" | "FAILED";
+  invoiceNumber?: string | null;
+  totalAmount?: number | null;
+};
 
 export type JwtPayload = {
   sub: string;

@@ -45,6 +45,11 @@ enum DeliveryStatus {
   CANCELLED
 }
 
+enum DeliveryMode {
+  RABTAONE
+  OWN
+}
+
 enum SyncStatus {
   PENDING
   SYNCED
@@ -146,6 +151,9 @@ model Order {
   shipState       String?
   shipPostalCode  String?
   shipCountry     String?
+  userLat         Float?
+  userLng         Float?
+  deliveryMode    DeliveryMode @default(RABTAONE)
   anonymizedAt    DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt

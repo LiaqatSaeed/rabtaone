@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
 import { registerApiRoutes } from "@/routes";
 import { registerErrorHandler, AppError } from "@/infrastructure/http/error-middleware";
 import { verifyToken } from "@/lib/jwt";
@@ -10,6 +11,7 @@ const app = Fastify({ logger: true });
 
 async function start() {
   await app.register(cors, { origin: true });
+  await app.register(multipart);
   registerErrorHandler(app);
 
   const publicPaths = new Set(["/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/sync/webhook"]);

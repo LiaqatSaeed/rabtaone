@@ -24,16 +24,21 @@ export const syncService = {
       return { skipped: true };
     }
 
-    const res = await fetch(`${env.ERP_BASE_URL}/api/sync/order`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${env.ERP_API_KEY}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch(`${env.ERP_BASE_URL}/api/sync/order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${env.ERP_API_KEY}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    return { ok: res.ok, status: res.status };
+      return { ok: res.ok, status: res.status };
+    } catch (err) {
+      logger.warn("ERP send failed", { orderId: payload.orderId, err: err instanceof Error ? err.message : err });
+      throw new AppError("ERP is unreachable. Check ERP_BASE_URL configuration.", 502, "ERP_UNREACHABLE");
+    }
   },
 
   async handleWebhook(payload: Record<string, unknown>) {
@@ -102,6 +107,17 @@ export const syncService = {
   async listPendingByMerchant(merchantId: string) {
     const requests = await syncRequestRepo.findPendingByMerchant(merchantId);
     return requests.map((req) => req.payload);
+  },
+
+  async listByMerchant(merchantId: string, statuses: ("PENDING" | "SYNCED" | "FAILED")[]) {
+    const requests = await syncRequestRepo.findByMerchant(merchantId, statuses);
+    return requests.map((req) => ({
+      ...(req.payload as Record<string, unknown>),
+      status: req.status,
+      invoiceNumber: req.invoiceNumber,
+      totalAmount: req.totalAmount,
+      createdAt: req.createdAt,
+    }));
   },
 
   async confirmSync(input: { syncRequestId: string; merchantId: string; invoiceNumber: string; totalAmount: number }) {

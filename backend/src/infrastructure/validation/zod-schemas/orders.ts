@@ -44,6 +44,7 @@ export const updateOrderStatusSchema = z.object({
     "COMPLETED",
     "CANCELLED",
   ]),
+  deliveryMode: z.enum(["RABTAONE", "OWN"]).optional(),
 });
 
 export const acceptProposalSchema = z.object({

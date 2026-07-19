@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Card } from "@/components/ui/Card";
+import { Card } from "./Card";
 
 export function StatCard({
   title,

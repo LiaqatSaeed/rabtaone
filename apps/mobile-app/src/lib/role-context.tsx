@@ -8,6 +8,7 @@ type RoleContextValue = {
   roles: Role[];
   activeRole: Role;
   setActiveRole: (role: Role) => void;
+  loaded: boolean;
 };
 
 const RoleContext = createContext<RoleContextValue | null>(null);
@@ -15,6 +16,7 @@ const RoleContext = createContext<RoleContextValue | null>(null);
 export function RoleProvider({ children }: { children: React.ReactNode }) {
   const [roles, setRoles] = useState<Role[]>(["USER"]);
   const [activeRole, setActiveRoleState] = useState<Role>("USER");
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("jwt");
@@ -30,6 +32,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     } else {
       setActiveRoleState(tokenRoles[0]);
     }
+    setLoaded(true);
   }, []);
 
   const setActiveRole = (role: Role) => {
@@ -37,7 +40,10 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("activeRole", role);
   };
 
-  const value = useMemo(() => ({ roles, activeRole, setActiveRole }), [roles, activeRole]);
+  const value = useMemo(
+    () => ({ roles, activeRole, setActiveRole, loaded }),
+    [roles, activeRole, loaded]
+  );
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;
 }

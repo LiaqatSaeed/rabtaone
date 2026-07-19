@@ -14,13 +14,14 @@ export class AppError extends Error {
 }
 
 export function registerErrorHandler(app: FastifyInstance) {
-  app.setErrorHandler((error, _req, reply) => {
+  app.setErrorHandler((error, req, reply) => {
     if (error instanceof AppError) {
       return reply.code(error.status).send({
         error: { message: error.message, code: error.code, meta: error.meta },
       });
     }
 
+    req.log.error({ err: error }, "Unhandled error");
     return reply.code(500).send({
       error: { message: "Internal Server Error", code: "INTERNAL" },
     });

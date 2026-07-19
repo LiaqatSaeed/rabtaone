@@ -1,4 +1,4 @@
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, DeliveryMode } from "@prisma/client";
 import { orderRepo } from "@/infrastructure/db/repositories/order-repo";
 import { AppError } from "@/infrastructure/http/error-middleware";
 import { syncService } from "@/services/sync-service";
@@ -34,6 +34,8 @@ export const orderService = {
     shipState?: string;
     shipPostalCode?: string;
     shipCountry?: string;
+    userLat?: number;
+    userLng?: number;
     items?: { sku: string; name: string; quantity: number; unitPrice: number }[];
   }) => orderRepo.create(input),
 
@@ -44,7 +46,7 @@ export const orderService = {
   listForMerchant: (merchantId: string, limit?: number) =>
     orderRepo.listByMerchant(merchantId, limit),
 
-  async transitionStatus(orderId: string, to: OrderStatus, merchantId?: string) {
+  async transitionStatus(orderId: string, to: OrderStatus, merchantId?: string, deliveryMode?: DeliveryMode) {
     const order = await orderRepo.findById(orderId);
     if (!order) throw new AppError("Order not found", 404, "ORDER_NOT_FOUND");
 
@@ -58,14 +60,28 @@ export const orderService = {
       await orderRepo.updateMerchant(orderId, merchantId);
     }
     if (to === "READY_FOR_DELIVERY") {
+      const mode = deliveryMode ?? order.deliveryMode;
+      const resolvedMerchantId = order.merchantId ?? merchantId;
+      const merchant = resolvedMerchantId
+        ? await prisma.merchantProfile.findUnique({ where: { id: resolvedMerchantId } })
+        : null;
+
       await prisma.$transaction(async (tx) => {
-        await tx.order.update({ where: { id: orderId }, data: { status: to } });
+        await tx.order.update({ where: { id: orderId }, data: { status: to, deliveryMode: mode } });
         await tx.orderStatusEvent.create({ data: { orderId, from, to } });
-        await tx.deliveryDraft.upsert({
-          where: { orderId },
-          create: { orderId },
-          update: {},
-        });
+        if (mode === "RABTAONE") {
+          await tx.deliveryDraft.upsert({
+            where: { orderId },
+            create: {
+              orderId,
+              pickupLat: merchant?.lat,
+              pickupLng: merchant?.lng,
+              dropLat: order.userLat ?? order.user.defaultLat ?? undefined,
+              dropLng: order.userLng ?? order.user.defaultLng ?? undefined,
+            },
+            update: {},
+          });
+        }
       });
     } else {
       await orderRepo.updateStatus(orderId, to);

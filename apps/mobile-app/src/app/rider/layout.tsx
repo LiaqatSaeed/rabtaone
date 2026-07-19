@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useRole } from "@/lib/role-context";
 
 export default function RiderLayout({ children }: { children: React.ReactNode }) {
-  const { activeRole } = useRole();
+  const { activeRole, loaded } = useRole();
+  const router = useRouter();
 
   useEffect(() => {
-    if (activeRole !== "DELIVERY") {
-      window.location.href = "/user";
+    if (loaded && activeRole !== "DELIVERY") {
+      router.replace("/user");
     }
-  }, [activeRole]);
+  }, [activeRole, loaded, router]);
 
   return <>{children}</>;
 }

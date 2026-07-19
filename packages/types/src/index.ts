@@ -38,6 +38,8 @@ export type Order = {
   shipPostalCode?: string | null;
   shipCountry?: string | null;
   deliveryDraft?: DeliveryDraft | null;
+  merchant?: { id: string; name: string } | null;
+  proposals?: Proposal[];
 };
 
 export type Proposal = {

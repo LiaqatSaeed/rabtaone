@@ -10,12 +10,13 @@ function logFail(name, message) {
 }
 
 async function request(path, options = {}) {
+  const { headers, ...rest } = options;
   const res = await fetch(`${API_BASE}${path}`, {
+    ...rest,
     headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
+      ...(rest.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(headers || {}),
     },
-    ...options,
   });
   const text = await res.text();
   let data = null;

@@ -11,6 +11,11 @@ const envSchema = z.object({
   BUILD_TIME: z.string().optional(),
   GIT_COMMIT: z.string().optional(),
   DOCS_VERSION: z.string().optional(),
+  MINIO_ENDPOINT: z.string().optional(),
+  MINIO_ACCESS_KEY: z.string().optional(),
+  MINIO_SECRET_KEY: z.string().optional(),
+  MINIO_BUCKET: z.string().optional(),
+  MINIO_PUBLIC_URL: z.string().optional(),
 });
 
 export const env = envSchema.parse({
@@ -24,4 +29,9 @@ export const env = envSchema.parse({
   BUILD_TIME: process.env.BUILD_TIME,
   GIT_COMMIT: process.env.GIT_COMMIT,
   DOCS_VERSION: process.env.DOCS_VERSION,
+  MINIO_ENDPOINT: process.env.MINIO_ENDPOINT,
+  MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY,
+  MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY,
+  MINIO_BUCKET: process.env.MINIO_BUCKET,
+  MINIO_PUBLIC_URL: process.env.MINIO_PUBLIC_URL,
 });

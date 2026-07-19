@@ -69,7 +69,7 @@ export default function HomePage() {
 
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Recent Orders</h2>
-        <Link href={`/user/order/new?industry=${selectedIndustry}`}>
+        <Link href={`/user/new?industry=${selectedIndustry}`}>
           <Button>Post Order</Button>
         </Link>
       </div>
@@ -88,7 +88,7 @@ export default function HomePage() {
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
-            <Link key={order.id} href={`/user/order/${order.id}`}>
+            <Link key={order.id} href={`/user/${order.id}`}>
               <Card className="hover:shadow-card transition">
                 <CardBody>
                   <div className="flex items-center justify-between">

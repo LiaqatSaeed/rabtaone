@@ -7,7 +7,7 @@ import { ok } from "@/infrastructure/http/response";
 import { z } from "zod";
 
 const statusSchema = z.object({ status: z.enum(["PICKED", "DELIVERED"]) });
-const listQuerySchema = z.object({ scope: z.enum(["open", "assigned"]).optional() });
+const listQuerySchema = z.object({ scope: z.enum(["open", "assigned", "history"]).optional() });
 
 export async function registerRiderRoutes(app: FastifyInstance) {
   app.get("/rider/drafts", async (req, reply) => {
@@ -15,13 +15,22 @@ export async function registerRiderRoutes(app: FastifyInstance) {
     const accountId = req.user?.sub ?? "";
     requireRole(roles, ["DELIVERY"], { accountId, action: "LIST_DRAFTS" });
     const query = listQuerySchema.parse(req.query);
+    const profile = await profileRepo.getDeliveryProfile(accountId);
+    if (!profile) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
+
     if (query.scope === "assigned") {
-      const riderId = await profileRepo.getDeliveryProfileId(accountId);
-      if (!riderId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
-      const drafts = await deliveryDraftService.listAssignedDrafts(riderId);
+      const drafts = await deliveryDraftService.listAssignedDrafts(profile.id);
       return ok(reply, drafts);
     }
-    const drafts = await deliveryDraftService.listOpenDrafts();
+    if (query.scope === "history") {
+      const drafts = await deliveryDraftService.listAssignedDrafts(profile.id, ["DELIVERED"]);
+      return ok(reply, drafts);
+    }
+    const riderLocation =
+      profile.currentLat != null && profile.currentLng != null
+        ? { lat: profile.currentLat, lng: profile.currentLng }
+        : null;
+    const drafts = await deliveryDraftService.listOpenDrafts(riderLocation);
     return ok(reply, drafts);
   });
 

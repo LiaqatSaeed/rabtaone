@@ -1,9 +1,10 @@
 .env
 .env.*
+.claude/settings.local.json
 node_modules
 pnpm-debug.log
 npm-debug.log
 .DS_Store
 .next
-.dist
+dist
 coverage

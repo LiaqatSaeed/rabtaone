@@ -39,6 +39,11 @@ services:
       SOCKET_IO_PATH: ${SOCKET_IO_PATH:-/socket.io}
       ERP_BASE_URL: ${ERP_BASE_URL:-https://erp.example.com}
       ERP_API_KEY: ${ERP_API_KEY:-replace_me}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-}
+      MINIO_BUCKET: ${MINIO_BUCKET:-rabtaone-media}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-}
       PORT: ${BACKEND_PORT:-7101}
       E2E_MODE: ${E2E_MODE:-false}
     ports:

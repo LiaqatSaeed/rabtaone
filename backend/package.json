@@ -1,6 +1,6 @@
 {
   "name": "ideaapp-backend",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,14 +10,18 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "e2e:smoke": "node scripts/e2e-smoke.js",
-    "e2e:reset": "node scripts/e2e-reset.js"
+    "e2e:reset": "node scripts/e2e-reset.js",
+    "e2e:verify": "node scripts/e2e-runner.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.658.0",
+    "@fastify/multipart": "^8.3.0",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
     "fastify": "^4.27.0",
     "@fastify/cors": "^9.0.1",
     "jsonwebtoken": "^9.0.2",
+    "sharp": "^0.33.5",
     "socket.io": "^4.7.5",
     "zod": "^3.23.8"
   },

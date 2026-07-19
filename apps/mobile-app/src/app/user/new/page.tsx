@@ -1,11 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@rabtaone/api-client";
 import { Card, CardBody, CardHeader, Button } from "@rabtaone/ui";
 
 export default function NewOrderPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewOrderForm />
+    </Suspense>
+  );
+}
+
+function NewOrderForm() {
   const searchParams = useSearchParams();
   const industry = searchParams.get("industry") || "PHARMACY";
   const [description, setDescription] = useState("");

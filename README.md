@@ -99,6 +99,12 @@ make smoke-up
 # Run smoke test only (backend must already be running)
 make smoke
 
+# Reset then smoke in one command
+make verify
+
+# Start stack then verify
+make verify-up
+
 # Reset synthetic E2E data
 make reset
 ```

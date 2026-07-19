@@ -2,17 +2,31 @@ import { prisma } from "@/infrastructure/db/prisma";
 import { deliveryDraftRepo } from "@/infrastructure/db/repositories/delivery-draft-repo";
 import { AppError } from "@/infrastructure/http/error-middleware";
 import { DeliveryStatus } from "@prisma/client";
+import { distanceKm } from "@/lib/geo";
 
 export const deliveryDraftService = {
   async createForOrder(orderId: string) {
     return deliveryDraftRepo.create({ orderId });
   },
 
-  listOpenDrafts() {
-    return deliveryDraftRepo.listOpen();
+  async listOpenDrafts(riderLocation?: { lat: number; lng: number } | null) {
+    const drafts = await deliveryDraftRepo.listOpen();
+    if (!riderLocation) return drafts;
+
+    return [...drafts].sort((a, b) => {
+      const distA =
+        a.pickupLat != null && a.pickupLng != null
+          ? distanceKm(riderLocation.lat, riderLocation.lng, a.pickupLat, a.pickupLng)
+          : Infinity;
+      const distB =
+        b.pickupLat != null && b.pickupLng != null
+          ? distanceKm(riderLocation.lat, riderLocation.lng, b.pickupLat, b.pickupLng)
+          : Infinity;
+      return distA - distB;
+    });
   },
-  listAssignedDrafts(riderId: string) {
-    return deliveryDraftRepo.listForRider(riderId, ["ASSIGNED", "PICKED"]);
+  listAssignedDrafts(riderId: string, statuses: DeliveryStatus[] = ["ASSIGNED", "PICKED"]) {
+    return deliveryDraftRepo.listForRider(riderId, statuses);
   },
 
   async acceptDraft(draftId: string, riderId: string) {

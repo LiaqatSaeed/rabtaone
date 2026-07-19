@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useRole } from "@/lib/role-context";
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
-  const { activeRole } = useRole();
+  const { activeRole, loaded } = useRole();
+  const router = useRouter();
 
   useEffect(() => {
-    if (activeRole !== "USER") {
-      window.location.href = "/rider";
+    if (loaded && activeRole !== "USER") {
+      router.replace("/rider");
     }
-  }, [activeRole]);
+  }, [activeRole, loaded, router]);
 
   return <>{children}</>;
 }
