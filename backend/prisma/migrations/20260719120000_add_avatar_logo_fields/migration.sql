@@ -1,0 +1,4 @@
+ALTER TABLE "UserProfile" ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT;
+ALTER TABLE "MerchantProfile" ADD COLUMN IF NOT EXISTS "logoUrl" TEXT;
+ALTER TABLE "MerchantProfile" ADD COLUMN IF NOT EXISTS "bannerUrl" TEXT;
+ALTER TABLE "DeliveryProfile" ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT;

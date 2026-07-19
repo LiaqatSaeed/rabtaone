@@ -9,6 +9,8 @@ import { registerSyncRoutes } from "@/routes/sync";
 import { registerRiderRoutes } from "@/routes/rider";
 import { registerMetaRoutes } from "@/routes/meta";
 import { registerAdminRoutes } from "@/routes/admin";
+import { registerUploadRoutes } from "@/routes/uploads";
+import { registerProfileRoutes } from "@/routes/profile";
 
 export async function registerApiRoutes(app: FastifyInstance) {
   await registerAuthRoutes(app);
@@ -21,4 +23,6 @@ export async function registerApiRoutes(app: FastifyInstance) {
   await registerRiderRoutes(app);
   await registerMetaRoutes(app);
   await registerAdminRoutes(app);
+  await registerUploadRoutes(app);
+  await registerProfileRoutes(app);
 }

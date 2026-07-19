@@ -83,6 +83,7 @@ model UserProfile {
   id         String   @id @default(cuid())
   accountId  String   @unique
   fullName   String
+  avatarUrl  String?
   defaultLat Float?
   defaultLng Float?
   createdAt  DateTime @default(now())
@@ -92,19 +93,21 @@ model UserProfile {
 }
 
 model MerchantProfile {
-  id          String   @id @default(cuid())
-  accountId   String   @unique
-  name        String
+  id           String   @id @default(cuid())
+  accountId    String   @unique
+  name         String
   industryType String
-  lat         Float
-  lng         Float
-  serviceKm   Int      @default(5)
-  hasDelivery Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  lat          Float
+  lng          Float
+  serviceKm    Int      @default(5)
+  hasDelivery  Boolean  @default(false)
+  logoUrl      String?
+  bannerUrl    String?
+  createdAt    DateTime @default(now())
 
-  account     Account @relation(fields: [accountId], references: [id])
-  proposals   Proposal[]
-  orders      Order[]
+  account      Account @relation(fields: [accountId], references: [id])
+  proposals    Proposal[]
+  orders       Order[]
   syncRequests SyncRequest[]
 }
 
@@ -112,6 +115,7 @@ model DeliveryProfile {
   id         String   @id @default(cuid())
   accountId  String   @unique
   fullName   String
+  avatarUrl  String?
   currentLat Float?
   currentLng Float?
   isOnline   Boolean  @default(false)
@@ -120,6 +124,7 @@ model DeliveryProfile {
   account    Account @relation(fields: [accountId], references: [id])
   bids       DeliveryBid[]
   jobs       DeliveryJob[]
+  drafts     DeliveryDraft[]
 }
 
 model Order {
