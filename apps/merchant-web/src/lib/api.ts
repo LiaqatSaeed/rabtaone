@@ -34,6 +34,32 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
   return data.data as T;
 }
 
+export async function apiUpload<T>(path: string, file: File): Promise<T> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: formData,
+  });
+
+  if (res.status === 401 && typeof window !== "undefined") {
+    localStorage.removeItem("jwt");
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const message = data?.error?.message || "Upload failed";
+    throw new Error(message);
+  }
+
+  return data.data as T;
+}
+
 export function decodeJwt(token: string) {
   try {
     const payload = token.split(".")[1];

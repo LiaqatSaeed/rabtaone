@@ -18,11 +18,13 @@ export const orderRepo = {
     shipCountry?: string;
     userLat?: number;
     userLng?: number;
+    merchantId?: string;
     items?: { sku: string; name: string; quantity: number; unitPrice: number }[];
   }) =>
     prisma.order.create({
       data: {
         userId: data.userId,
+        merchantId: data.merchantId,
         prescriptionUrl: data.prescriptionUrl,
         notes: data.notes,
         industryType: data.industryType,

@@ -14,6 +14,7 @@ import { accessService } from "@/services/access-service";
 import { proposalService } from "@/services/proposal-service";
 import { proposalRepo } from "@/infrastructure/db/repositories/proposal-repo";
 import { logger } from "@/lib/logger";
+import { prisma } from "@/infrastructure/db/prisma";
 
 export async function registerOrderRoutes(app: FastifyInstance) {
   app.post("/orders", async (req, reply) => {
@@ -34,8 +35,17 @@ export async function registerOrderRoutes(app: FastifyInstance) {
     if (!accountId) throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
     const userId = await profileRepo.getUserProfileId(accountId);
     if (!userId) throw new AppError("Profile not found", 404, "PROFILE_NOT_FOUND");
+
+    let merchantId: string | undefined;
+    if (data.merchantSlug) {
+      const merchant = await prisma.merchantProfile.findUnique({ where: { slug: data.merchantSlug } });
+      if (!merchant) throw new AppError("Merchant not found", 404, "MERCHANT_NOT_FOUND");
+      merchantId = merchant.id;
+    }
+
     const order = await orderService.createOrder({
       userId,
+      merchantId,
       prescriptionUrl: data.prescriptionUrl,
       notes: data.notes,
       totalAmount: data.declaredTotalAmount ?? computedTotal,

@@ -5,6 +5,7 @@ export const createOrderSchema = z.object({
   notes: z.string().max(1000).optional(),
   userLat: z.number().optional(),
   userLng: z.number().optional(),
+  merchantSlug: z.string().optional(),
   shipping: z
     .object({
       name: z.string().min(1),

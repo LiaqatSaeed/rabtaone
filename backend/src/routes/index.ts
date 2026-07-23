@@ -11,6 +11,7 @@ import { registerMetaRoutes } from "@/routes/meta";
 import { registerAdminRoutes } from "@/routes/admin";
 import { registerUploadRoutes } from "@/routes/uploads";
 import { registerProfileRoutes } from "@/routes/profile";
+import { registerPublicRoutes } from "@/routes/public";
 
 export async function registerApiRoutes(app: FastifyInstance) {
   await registerAuthRoutes(app);
@@ -25,4 +26,5 @@ export async function registerApiRoutes(app: FastifyInstance) {
   await registerAdminRoutes(app);
   await registerUploadRoutes(app);
   await registerProfileRoutes(app);
+  await registerPublicRoutes(app);
 }

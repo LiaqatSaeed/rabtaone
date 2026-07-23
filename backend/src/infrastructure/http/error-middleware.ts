@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { ZodError } from "zod";
 
 export class AppError extends Error {
   status: number;
@@ -18,6 +19,14 @@ export function registerErrorHandler(app: FastifyInstance) {
     if (error instanceof AppError) {
       return reply.code(error.status).send({
         error: { message: error.message, code: error.code, meta: error.meta },
+      });
+    }
+
+    if (error instanceof ZodError) {
+      const first = error.issues[0];
+      const message = first ? `${first.path.join(".")}: ${first.message}` : "Invalid request";
+      return reply.code(400).send({
+        error: { message, code: "VALIDATION_ERROR", meta: { issues: error.issues } },
       });
     }
 

@@ -18,6 +18,7 @@ async function start() {
 
   app.addHook("preHandler", async (req) => {
     if (publicPaths.has(req.url)) return;
+    if (req.url.startsWith("/api/v1/public/")) return;
     if (!req.url.startsWith("/api/v1")) return;
 
     const authHeader = req.headers.authorization;

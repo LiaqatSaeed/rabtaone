@@ -36,6 +36,7 @@ export const orderService = {
     shipCountry?: string;
     userLat?: number;
     userLng?: number;
+    merchantId?: string;
     items?: { sku: string; name: string; quantity: number; unitPrice: number }[];
   }) => orderRepo.create(input),
 

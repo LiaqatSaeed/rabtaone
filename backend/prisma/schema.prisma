@@ -108,6 +108,10 @@ model MerchantProfile {
   hasDelivery  Boolean  @default(false)
   logoUrl      String?
   bannerUrl    String?
+  slug         String?  @unique
+  description  String?
+  whatsapp     String?
+  categories   String[] @default([])
   createdAt    DateTime @default(now())
 
   account      Account @relation(fields: [accountId], references: [id])

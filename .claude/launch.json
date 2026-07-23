@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "mobile-app",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "rabtaone-mobile-app", "dev", "-p", "3001"],
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["/Users/mac/Projects/Product/rabtaone/scripts/dev-mobile.sh"],
       "port": 3001
     }
   ]

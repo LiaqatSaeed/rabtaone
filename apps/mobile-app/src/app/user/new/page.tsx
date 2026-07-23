@@ -16,6 +16,7 @@ export default function NewOrderPage() {
 function NewOrderForm() {
   const searchParams = useSearchParams();
   const industry = searchParams.get("industry") || "PHARMACY";
+  const merchantSlug = searchParams.get("merchantSlug") || undefined;
   const [description, setDescription] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,6 +29,7 @@ function NewOrderForm() {
       const payload = {
         prescriptionUrl: image ? URL.createObjectURL(image) : "https://example.com/placeholder.png",
         notes: description,
+        merchantSlug,
       };
       await apiFetch("/api/v1/orders", {
         method: "POST",
@@ -48,6 +50,7 @@ function NewOrderForm() {
       <header>
         <h1 className="text-xl font-semibold">Post New Order</h1>
         <p className="text-sm text-slate-600">Industry: {industry}</p>
+        {merchantSlug && <p className="text-sm text-indigo-600 mt-1">Ordering from: {merchantSlug}</p>}
       </header>
 
       <Card>

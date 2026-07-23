@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/infrastructure/db/prisma";
 import { uploadFile } from "@/lib/storage";
 import { ok } from "@/infrastructure/http/response";
@@ -13,12 +14,22 @@ const updateUserSchema = z.object({
   defaultLng: z.number().optional(),
 });
 
+const slugSchema = z
+  .string()
+  .min(3)
+  .max(60)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase letters, numbers, and hyphens only");
+
 const updateMerchantSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   lat: z.number().optional(),
   lng: z.number().optional(),
   serviceKm: z.number().int().min(1).max(100).optional(),
   hasDelivery: z.boolean().optional(),
+  slug: slugSchema.optional(),
+  description: z.string().max(2000).optional(),
+  whatsapp: z.string().min(6).max(20).optional(),
+  categories: z.array(z.string().min(1).max(40)).max(10).optional(),
 });
 
 const updateDeliverySchema = z.object({
@@ -69,11 +80,18 @@ export async function registerProfileRoutes(app: FastifyInstance) {
 
     if (roles.includes("MERCHANT")) {
       const data = updateMerchantSchema.parse(req.body);
-      const profile = await prisma.merchantProfile.update({
-        where: { accountId },
-        data,
-      });
-      return ok(reply, profile);
+      try {
+        const profile = await prisma.merchantProfile.update({
+          where: { accountId },
+          data,
+        });
+        return ok(reply, profile);
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+          throw new AppError("That slug is already taken", 409, "SLUG_TAKEN");
+        }
+        throw err;
+      }
     }
 
     if (roles.includes("DELIVERY")) {
